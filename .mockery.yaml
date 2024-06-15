@@ -1,0 +1,13 @@
+inpackage: False
+with-expecter: True
+disable-version-string: True
+packages:
+  github.com/luukvdm/mediator:
+    config:
+        dir: "mocks/{{.InterfaceDirRelative}}"
+        outpkg: "mocks"
+    interfaces:
+      NotificationHandler:
+      Request:
+      Behavior:
+
