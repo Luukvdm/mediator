@@ -23,18 +23,21 @@ func TestTracer_Handler(t *testing.T) {
 
 	ctx := context.Background()
 
-	inmemoryExp := tracetest.NewInMemoryExporter()
-	traceProvider := sdkTrace.NewTracerProvider(
-		sdkTrace.WithSampler(sdkTrace.AlwaysSample()),
-		sdkTrace.WithSpanProcessor(sdkTrace.NewSimpleSpanProcessor(inmemoryExp)))
-	otel.SetTracerProvider(traceProvider)
+	createBehav := func() (mediator.Behavior, *tracetest.InMemoryExporter) {
+		inmemoryExp := tracetest.NewInMemoryExporter()
+		traceProvider := sdkTrace.NewTracerProvider(
+			sdkTrace.WithSampler(sdkTrace.AlwaysSample()),
+			sdkTrace.WithSpanProcessor(sdkTrace.NewSimpleSpanProcessor(inmemoryExp)))
+		otel.SetTracerProvider(traceProvider)
 
-	behav := behavior.NewOtelTracer(behavior.WithTracerProvider(traceProvider))
+		behav := behavior.NewOtelTracer(behavior.WithTracerProvider(traceProvider))
+		return behav, inmemoryExp
+	}
 
 	t.Run("Attributes", func(t *testing.T) {
 		t.Parallel()
 
-		inmemoryExp.Reset()
+		behav, inmemoryExp := createBehav()
 
 		var reqCtx context.Context
 		handler := fakeRequest{handleFunc: func(ctx context.Context, _ mediator.Message) (any, error) {
@@ -65,7 +68,7 @@ func TestTracer_Handler(t *testing.T) {
 	t.Run("RecordErrors", func(t *testing.T) {
 		t.Parallel()
 
-		inmemoryExp.Reset()
+		behav, inmemoryExp := createBehav()
 
 		reqErr := errors.New("something went wrong")
 		var reqCtx context.Context
