@@ -7,11 +7,11 @@ type (
 	}
 )
 
-func (f fakeMediator) Then(_ Handler) Handler {
+func (f fakeMediator) Then(_ HandlerFunc) Handler {
 	return f.handleFunc
 }
 
-func (f fakeMediator) getChain() chain {
+func (f fakeMediator) getPipeline() Pipeline {
 	return f
 }
 

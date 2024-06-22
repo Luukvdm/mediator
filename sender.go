@@ -10,7 +10,7 @@ type (
 	//
 	// The interface is implemented by [Mediator].
 	Sender interface {
-		getChain() chain
+		getPipeline() Pipeline
 	}
 
 	// Request is an object that can be sent through the [Mediator].
@@ -26,21 +26,14 @@ type (
 	}
 )
 
-// newRequestHandler creates the final 'behavior' for the [chain].
-// It calls the handle func on the [Request].
-func newRequestHandler[T any](req Request[T]) Handler {
-	return HandlerFunc(func(ctx context.Context, _ Message) (any, error) {
-		return req.Handle(ctx)
-	})
-}
-
 // Send a [Request] using a [Sender].
 // This function uses reflect to decide the name of the request.
 //
 // The [Sender] interface is implemented by [Mediator].
 func Send[T any](ctx context.Context, m Sender, req Request[T]) (T, error) {
-	// wrapped := newWrappedRequest(req)
-	handler := m.getChain().Then(newRequestHandler(req))
+	handler := m.getPipeline().Then(func(ctx context.Context, _ Message) (any, error) {
+		return req.Handle(ctx)
+	})
 	resp, err := handler.Handle(ctx, newRequestMessage(req))
 	respT := resp.(T)
 	return respT, err

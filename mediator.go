@@ -10,8 +10,8 @@ type (
 		Sender
 	}
 	mediator struct {
-		behaviorChain chain
-		notifiers     map[any][]any
+		pipeline  Pipeline
+		notifiers map[any][]any
 	}
 	key[T any] struct{}
 
@@ -19,6 +19,7 @@ type (
 	Option  func(*options)
 	options struct {
 		behaviors []Behavior
+		pipeline  Pipeline
 	}
 )
 
@@ -30,6 +31,14 @@ func WithBehaviors(behaviors ...Behavior) Option {
 	}
 }
 
+// WithPipeline overwrites the default pipeline with the given implementation.
+// If this option is set, other pipeline options like [WithBehaviors] are ignored.
+func WithPipeline(pipeline Pipeline) Option {
+	return func(o *options) {
+		o.pipeline = pipeline
+	}
+}
+
 func (m *mediator) newNotifier(key any, notifier any) {
 	m.notifiers[key] = append(m.notifiers[key], notifier)
 }
@@ -38,8 +47,8 @@ func (m *mediator) getAllNotifiers() map[any][]any {
 	return m.notifiers
 }
 
-func (m *mediator) getChain() chain {
-	return m.behaviorChain
+func (m *mediator) getPipeline() Pipeline {
+	return m.pipeline
 }
 
 // New creates a new [Mediator].
@@ -52,9 +61,12 @@ func New(opt ...Option) Mediator {
 	for _, o := range opt {
 		o(opts)
 	}
+	if opts.pipeline == nil {
+		opts.pipeline = newPipeline(opts.behaviors...)
+	}
 
 	return &mediator{
-		behaviorChain: newChain(opts.behaviors...),
-		notifiers:     make(map[any][]any),
+		pipeline:  opts.pipeline,
+		notifiers: make(map[any][]any),
 	}
 }
