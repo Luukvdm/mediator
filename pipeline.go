@@ -9,8 +9,10 @@ type (
 	Handler interface {
 		Handle(ctx context.Context, msg Message) (any, error)
 	}
+
 	// HandlerFunc for [Behavior].
 	HandlerFunc func(ctx context.Context, msg Message) (any, error)
+
 	// Behavior is a middleware for the [Mediator].
 	// Behaviors are wrapped around the handling of a [Notification] or [Request].
 	// And executed by the [Pipeline].
@@ -18,11 +20,14 @@ type (
 		Handler(next Handler) Handler
 	}
 
-	chain interface {
-		Then(h Handler) Handler
-	}
 	// Pipeline helps with combining/ chaining multiple [Behavior] instances.
-	Pipeline struct {
+	Pipeline interface {
+		Then(hf HandlerFunc) Handler
+	}
+
+	// pipeline is the default [Pipeline] implementation.
+	// It simply chains behaviors.
+	pipeline struct {
 		behaviors []Behavior
 	}
 )
@@ -32,8 +37,10 @@ func (f HandlerFunc) Handle(ctx context.Context, msg Message) (any, error) {
 	return f(ctx, msg)
 }
 
-// Then finalizes the chain build from the [Pipeline] by adding the final [Handler] h to the chain.
-func (c Pipeline) Then(h Handler) Handler {
+// Then creates a handler chain from the [Pipeline].
+// [Handler] h is the final piece of the chain and the message being handled.
+func (c pipeline) Then(hf HandlerFunc) Handler {
+	var h Handler = hf
 	for i := range c.behaviors {
 		next := c.behaviors[len(c.behaviors)-1-i]
 		h = next.Handler(h)
@@ -41,7 +48,7 @@ func (c Pipeline) Then(h Handler) Handler {
 	return h
 }
 
-// newChain creates a new chain for the given [Behavior] slice.
-func newChain(behaviors ...Behavior) chain {
-	return Pipeline{behaviors: append(([]Behavior)(nil), behaviors...)}
+// newPipeline creates a new pipeline for the given [Behavior] slice.
+func newPipeline(behaviors ...Behavior) Pipeline {
+	return pipeline{behaviors: append(([]Behavior)(nil), behaviors...)}
 }

@@ -20,7 +20,7 @@ type (
 	//
 	// The interface is implemented by [Mediator].
 	Publisher interface {
-		getChain() chain
+		getPipeline() Pipeline
 		getAllNotifiers() map[any][]any
 		newNotifier(key any, notifier any)
 	}
@@ -28,14 +28,6 @@ type (
 	// Notification is an event that can be published through the [Publisher].
 	Notification[T any] interface{}
 )
-
-// newNotificationHandler creates the final 'behavior' for the [chain].
-// It calls the handle func on the [NotificationHandler].
-func newNotificationHandler[T Notification[any]](notification T, handler NotificationHandler[T]) Handler {
-	return HandlerFunc(func(ctx context.Context, _ Message) (any, error) {
-		return nil, handler.Handle(ctx, notification)
-	})
-}
 
 // Subscribe to a [Notification] using [Publisher].
 // When a [Notification] is published, every subscriber triggers the [Pipeline].
@@ -57,7 +49,9 @@ func Publish[T Notification[any]](ctx context.Context, p Publisher, notification
 			// This shouldn't happen, but catching it just in case to prevent possible panics
 			errs = append(errs, errors.New("subscribers contain a broken handler that doesn't implement the NotificationHandler interface"))
 		}
-		handler := p.getChain().Then(newNotificationHandler(notification, h))
+		handler := p.getPipeline().Then(func(ctx context.Context, _ Message) (any, error) {
+			return nil, h.Handle(ctx, notification)
+		})
 
 		_, err := handler.Handle(ctx, newNotificationMessage[T](notification))
 		if err != nil {
