@@ -1,5 +1,9 @@
 package mediator
 
+import (
+	"sync"
+)
+
 type (
 	// Mediator is mainly used through the [Send] and [Publish] functions.
 	// It holds the [Pipeline] that messages pass through before they get handled.
@@ -10,8 +14,9 @@ type (
 		Sender
 	}
 	mediator struct {
-		pipeline  Pipeline
-		notifiers map[any][]any
+		pipeline    Pipeline
+		notifiers   map[any][]any
+		notifiersMu sync.RWMutex
 	}
 	key[T any] struct{}
 
@@ -40,10 +45,14 @@ func WithPipeline(pipeline Pipeline) Option {
 }
 
 func (m *mediator) newNotifier(key any, notifier any) {
+	m.notifiersMu.Lock()
 	m.notifiers[key] = append(m.notifiers[key], notifier)
+	m.notifiersMu.Unlock()
 }
 
 func (m *mediator) getAllNotifiers() map[any][]any {
+	m.notifiersMu.RLock()
+	defer m.notifiersMu.RUnlock()
 	return m.notifiers
 }
 
