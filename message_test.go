@@ -10,6 +10,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMessageType_String(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		t mediator.MessageType
+		s string
+	}{
+		{
+			t: mediator.TypeRequest,
+			s: "request",
+		},
+		{
+			t: mediator.TypeNotification,
+			s: "notification",
+		},
+		{
+			t: mediator.MessageType(999),
+			s: "unknown",
+		},
+	}
+	for _, c := range cases {
+		assert.IsType(t, mediator.TypeRequest, c.t)
+		assert.Equal(t, c.s, c.t.String())
+	}
+}
+
 func TestRequestMessage(t *testing.T) {
 	t.Parallel()
 
