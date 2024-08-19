@@ -93,8 +93,8 @@ func (r requestMessage[T]) GetRequest() Request[T] {
 	return r.req
 }
 
-// newRequestMessage wraps a [Request] so it implements the [Message] and [RequestMessage] interfaces.
-func newRequestMessage[T any](req Request[T]) RequestMessage[T] {
+// NewRequestMessage wraps a [Request] so it implements the [Message] and [RequestMessage] interfaces.
+func NewRequestMessage[T any](req Request[T]) RequestMessage[T] {
 	return requestMessage[T]{
 		req: req,
 	}
@@ -122,8 +122,8 @@ func (n notificationMessage[T]) GetNotification() Notification[T] {
 	return n.notification
 }
 
-// newNotificationMessage wraps a [Notification] so it implements the [Message] and [NotificationMessage] interfaces.
-func newNotificationMessage[T any](notification Notification[T]) NotificationMessage[T] {
+// NewNotificationMessage wraps a [Notification] so it implements the [Message] and [NotificationMessage] interfaces.
+func NewNotificationMessage[T any](notification Notification[T]) NotificationMessage[T] {
 	return notificationMessage[T]{
 		notification: notification,
 	}

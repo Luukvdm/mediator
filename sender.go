@@ -45,7 +45,7 @@ func SendWithLogger[T any](ctx context.Context, l *slog.Logger, m Sender, req Re
 	handler := m.getPipeline().Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
 		return req.Handle(ctx, l)
 	})
-	resp, err := handler.Handle(ctx, l, newRequestMessage(req))
+	resp, err := handler.Handle(ctx, l, NewRequestMessage(req))
 	respT := resp.(T)
 	return respT, err
 }

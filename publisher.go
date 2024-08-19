@@ -66,7 +66,7 @@ func PublishWithLogger[T Notification[any]](ctx context.Context, l *slog.Logger,
 			return nil, h.Handle(ctx, l, notification)
 		})
 
-		_, err := handler.Handle(ctx, l, newNotificationMessage[T](notification))
+		_, err := handler.Handle(ctx, l, NewNotificationMessage[T](notification))
 		if err != nil {
 			errs = append(errs, err)
 		}
