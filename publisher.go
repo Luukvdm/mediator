@@ -13,6 +13,10 @@ type (
 		Handle(ctx context.Context, l *slog.Logger, event T) error
 	}
 
+	notificationHandler[T any] struct {
+		handleFunc func(ctx context.Context, l *slog.Logger, event T) error
+	}
+
 	// Publisher can be used to subscribe and publish notifications.
 	// Publishing and subscribing is done through the [Publish] and [Subscribe] functions that take
 	// Publisher as a parameter.
@@ -30,6 +34,18 @@ type (
 	// Notification is an event that can be published through the [Publisher].
 	Notification[T any] interface{}
 )
+
+func (nh notificationHandler[T]) Handle(ctx context.Context, l *slog.Logger, event T) error {
+	return nh.handleFunc(ctx, l, event)
+}
+
+// NewNotificationHandler is a utility function for creating a [NotificationHandler] without having to define a type.
+// This is especially useful when writing tests.
+func NewNotificationHandler[T any](handleFunc func(ctx context.Context, l *slog.Logger, event T) error) NotificationHandler[T] {
+	return notificationHandler[T]{
+		handleFunc: handleFunc,
+	}
+}
 
 // Subscribe to a [Notification] using [Publisher].
 // When a [Notification] is published, every subscriber triggers the [Pipeline].

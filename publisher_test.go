@@ -3,6 +3,7 @@ package mediator_test
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,6 +82,28 @@ func TestPublish_Errors(t *testing.T) {
 	err = mediator.Publish(ctx, p, myEvent)
 	require.Error(t, err)
 	require.Equal(t, errors.Join(myErr, myErr).Error(), err.Error())
+}
+
+func TestPublish_InlineSubscriber(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	p := mediator.New()
+
+	myEvent := "some-event"
+	var eventHandled bool
+	handler := mediator.NewNotificationHandler(func(_ context.Context, _ *slog.Logger, event string) error {
+		assert.Equal(t, myEvent, event)
+		eventHandled = true
+		return nil
+	})
+	err := mediator.Subscribe(p, handler)
+	require.NoError(t, err)
+
+	err = mediator.Publish(ctx, p, myEvent)
+	require.NoError(t, err)
+
+	assert.True(t, eventHandled, "inline handler should be notified about the event")
 }
 
 func TestPublish_BehaviorPersistence(t *testing.T) {
