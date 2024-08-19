@@ -3,6 +3,7 @@ package mediator_test
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,7 +33,7 @@ func TestSubscribe_Multiple(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		handler := mocks.NewMockNotificationHandler[string](t)
-		handler.EXPECT().Handle(ctx, mock.Anything).
+		handler.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger"), mock.Anything).
 			Once().
 			Return(nil)
 		err := mediator.Subscribe[string](p, handler)
@@ -51,7 +52,7 @@ func TestPublish(t *testing.T) {
 	myEvent := "test-123"
 
 	handler := mocks.NewMockNotificationHandler[string](t)
-	handler.EXPECT().Handle(ctx, mock.Anything).
+	handler.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger"), mock.Anything).
 		Once().
 		Return(nil)
 	err := mediator.Subscribe[string](p, handler)
@@ -70,7 +71,7 @@ func TestPublish_Errors(t *testing.T) {
 	myEvent := "test"
 	myErr := errors.New("fake error")
 	handler := mocks.NewMockNotificationHandler[string](t)
-	handler.EXPECT().Handle(ctx, mock.Anything).
+	handler.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger"), mock.Anything).
 		Twice().
 		Return(myErr)
 	err := mediator.Subscribe[string](p, handler)
@@ -83,6 +84,28 @@ func TestPublish_Errors(t *testing.T) {
 	require.Equal(t, errors.Join(myErr, myErr).Error(), err.Error())
 }
 
+func TestPublish_InlineSubscriber(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	p := mediator.New()
+
+	myEvent := "some-event"
+	var eventHandled bool
+	handler := mediator.NewNotificationHandler(func(_ context.Context, _ *slog.Logger, event string) error {
+		assert.Equal(t, myEvent, event)
+		eventHandled = true
+		return nil
+	})
+	err := mediator.Subscribe(p, handler)
+	require.NoError(t, err)
+
+	err = mediator.Publish(ctx, p, myEvent)
+	require.NoError(t, err)
+
+	assert.True(t, eventHandled, "inline handler should be notified about the event")
+}
+
 func TestPublish_BehaviorPersistence(t *testing.T) {
 	t.Parallel()
 
@@ -93,7 +116,7 @@ func TestPublish_BehaviorPersistence(t *testing.T) {
 	myEvent := "test"
 
 	handler := mocks.NewMockNotificationHandler[string](t)
-	handler.EXPECT().Handle(ctx, mock.Anything).
+	handler.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger"), mock.Anything).
 		Return(nil)
 	err := mediator.Subscribe[string](m, handler)
 	require.NoError(t, err)

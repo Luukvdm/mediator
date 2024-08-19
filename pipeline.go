@@ -2,16 +2,17 @@ package mediator
 
 import (
 	"context"
+	"log/slog"
 )
 
 type (
 	// Handler is an interface used by [Behavior].
 	Handler interface {
-		Handle(ctx context.Context, msg Message) (any, error)
+		Handle(ctx context.Context, l *slog.Logger, msg Message) (any, error)
 	}
 
 	// HandlerFunc for [Behavior].
-	HandlerFunc func(ctx context.Context, msg Message) (any, error)
+	HandlerFunc func(ctx context.Context, l *slog.Logger, msg Message) (any, error)
 
 	// Behavior is a middleware for the [Mediator].
 	// Behaviors are wrapped around the handling of a [Notification] or [Request].
@@ -33,8 +34,8 @@ type (
 )
 
 // Handle runs the [Handle] function. It is required so that [HandlerFunc] implements the [Handler] interface.
-func (f HandlerFunc) Handle(ctx context.Context, msg Message) (any, error) {
-	return f(ctx, msg)
+func (f HandlerFunc) Handle(ctx context.Context, l *slog.Logger, msg Message) (any, error) {
+	return f(ctx, l, msg)
 }
 
 // Then creates a handler chain from the [Pipeline].

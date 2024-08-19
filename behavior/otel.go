@@ -2,6 +2,7 @@ package behavior
 
 import (
 	"context"
+	"log/slog"
 
 	"go.opentelemetry.io/otel/trace"
 
@@ -39,11 +40,11 @@ func WithTracerProvider(provider trace.TracerProvider) OtelTracerOption {
 
 // Handler runs the [OtelTracer] behavior.
 func (b *OtelTracer) Handler(next mediator.Handler) mediator.Handler {
-	return mediator.HandlerFunc(func(ctx context.Context, msg mediator.Message) (any, error) {
+	return mediator.HandlerFunc(func(ctx context.Context, l *slog.Logger, msg mediator.Message) (any, error) {
 		spanCtx, span := b.tracer.Start(ctx, msg.String())
 		defer span.End()
 
-		resp, err := next.Handle(spanCtx, msg)
+		resp, err := next.Handle(spanCtx, l, msg)
 		if err != nil {
 			span.SetAttributes(semconv.ExceptionType(msg.String()))
 			span.SetAttributes(semconv.ExceptionMessage(err.Error()))

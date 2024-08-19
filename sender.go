@@ -2,6 +2,7 @@ package mediator
 
 import (
 	"context"
+	"log/slog"
 )
 
 type (
@@ -11,6 +12,7 @@ type (
 	// The interface is implemented by [Mediator].
 	Sender interface {
 		getPipeline() Pipeline
+		getLogger() *slog.Logger
 	}
 
 	// Request is an object that can be sent through the [Mediator].
@@ -22,7 +24,7 @@ type (
 	Request[T any] interface {
 		// Handle executes the [Request].
 		// The [context.Context] parameter and the return values can be accessed and altered in the [Pipeline].
-		Handle(ctx context.Context) (T, error)
+		Handle(ctx context.Context, l *slog.Logger) (T, error)
 	}
 )
 
@@ -31,10 +33,19 @@ type (
 //
 // The [Sender] interface is implemented by [Mediator].
 func Send[T any](ctx context.Context, m Sender, req Request[T]) (T, error) {
-	handler := m.getPipeline().Then(func(ctx context.Context, _ Message) (any, error) {
-		return req.Handle(ctx)
+	return SendWithLogger(ctx, m.getLogger(), m, req)
+}
+
+// SendWithLogger a [Request] with a logger instance using a [Sender].
+// This function is like [Send], but with a logger parameter.
+// Passing a logger can be useful if you want to add attributes to the logger in the caller.
+//
+// The [Sender] interface is implemented by [Mediator].
+func SendWithLogger[T any](ctx context.Context, l *slog.Logger, m Sender, req Request[T]) (T, error) {
+	handler := m.getPipeline().Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
+		return req.Handle(ctx, l)
 	})
-	resp, err := handler.Handle(ctx, newRequestMessage(req))
+	resp, err := handler.Handle(ctx, l, NewRequestMessage(req))
 	respT := resp.(T)
 	return respT, err
 }

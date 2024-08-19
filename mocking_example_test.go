@@ -3,6 +3,7 @@ package mediator_test
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/luukvdm/mediator"
 )
@@ -11,7 +12,7 @@ type GetByID struct {
 	id int
 }
 
-func (g GetByID) Handle(_ context.Context) (string, error) {
+func (g GetByID) Handle(_ context.Context, _ *slog.Logger) (string, error) {
 	return fmt.Sprintf("object with id %d", g.id), nil
 }
 
@@ -22,7 +23,7 @@ func ExampleNewFake() {
 
 	// create a new fake mediator and give it the response you want it to return
 	// m := mediator.NewFakeMediator[string]("mocked response", nil)
-	m := mediator.NewFake(func(_ context.Context, msg mediator.Message) (any, error) {
+	m := mediator.NewFake(func(_ context.Context, _ *slog.Logger, msg mediator.Message) (any, error) {
 		// both notifications and requests can pass through this function
 		if req, ok := msg.(mediator.RequestMessage[string]); ok {
 			q := req.GetRequest().(GetByID)

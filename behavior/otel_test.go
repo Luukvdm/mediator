@@ -3,6 +3,7 @@ package behavior_test
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,7 +53,7 @@ func TestTracer_Handler(t *testing.T) {
 			return nil, nil
 		}}
 
-		_, err := behav.Handler(handler).Handle(ctx, handler)
+		_, err := behav.Handler(handler).Handle(ctx, slog.Default(), handler)
 		require.NoError(t, err)
 
 		span := trace.SpanFromContext(reqCtx)
@@ -84,7 +85,7 @@ func TestTracer_Handler(t *testing.T) {
 			return nil, reqErr
 		}}
 
-		_, err := behav.Handler(handler).Handle(ctx, handler)
+		_, err := behav.Handler(handler).Handle(ctx, slog.Default(), handler)
 		require.Error(t, err)
 
 		expSpans := inmemoryExp.GetSpans()
