@@ -21,11 +21,11 @@ type Slogger struct {
 
 // Handler runs the [Slogger] behavior.
 func (b Slogger) Handler(next mediator.Handler) mediator.Handler {
-	return mediator.HandlerFunc(func(ctx context.Context, msg mediator.Message) (any, error) {
-		l := b.l.With(msg.Type().String(), msg.String())
+	return mediator.HandlerFunc(func(ctx context.Context, l *slog.Logger, msg mediator.Message) (any, error) {
+		l = l.With(msg.Type().String(), msg.String())
 
 		start := time.Now()
-		resp, err := next.Handle(ctx, msg)
+		resp, err := next.Handle(ctx, l, msg)
 
 		logArgs := []any{
 			slog.Duration("elapsed", time.Since(start)),

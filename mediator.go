@@ -1,6 +1,7 @@
 package mediator
 
 import (
+	"log/slog"
 	"sync"
 )
 
@@ -14,6 +15,7 @@ type (
 		Sender
 	}
 	mediator struct {
+		l           *slog.Logger
 		pipeline    Pipeline
 		notifiers   map[any][]any
 		notifiersMu sync.RWMutex
@@ -23,6 +25,7 @@ type (
 	// Option defines the method to customize [Mediator].
 	Option  func(*options)
 	options struct {
+		l         *slog.Logger
 		behaviors []Behavior
 		pipeline  Pipeline
 	}
@@ -60,12 +63,17 @@ func (m *mediator) getPipeline() Pipeline {
 	return m.pipeline
 }
 
+func (m *mediator) getLogger() *slog.Logger {
+	return m.l
+}
+
 // New creates a new [Mediator].
 // The [Mediator] can be customized with the [Option] slice parameter.
 func New(opt ...Option) Mediator {
 	// default options
 	opts := &options{
 		behaviors: []Behavior{},
+		l:         slog.Default(),
 	}
 	for _, o := range opt {
 		o(opts)
@@ -75,6 +83,7 @@ func New(opt ...Option) Mediator {
 	}
 
 	return &mediator{
+		l:         opts.l,
 		pipeline:  opts.pipeline,
 		notifiers: make(map[any][]any),
 	}

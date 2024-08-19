@@ -2,6 +2,7 @@ package mediator
 
 import (
 	"context"
+	"log/slog"
 	"reflect"
 )
 
@@ -72,8 +73,8 @@ func (r requestMessage[T]) GetInner() any {
 	return r.req
 }
 
-func (r requestMessage[T]) Handle(ctx context.Context) (T, error) {
-	return r.req.Handle(ctx)
+func (r requestMessage[T]) Handle(ctx context.Context, l *slog.Logger) (T, error) {
+	return r.req.Handle(ctx, l)
 }
 
 func (r requestMessage[T]) String() string {

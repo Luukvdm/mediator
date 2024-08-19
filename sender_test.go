@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luukvdm/mediator"
@@ -21,7 +22,7 @@ func TestSend(t *testing.T) {
 
 	msg := "test123"
 	req := mocks.NewMockRequest[string](t)
-	req.EXPECT().Handle(ctx).Return(msg, nil)
+	req.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger")).Return(msg, nil)
 
 	resp, err := mediator.Send[string](ctx, m, req)
 	require.NoError(t, err)
@@ -39,7 +40,7 @@ func TestSend_BehaviorPersistence(t *testing.T) {
 	m := mediator.New(mediator.WithBehaviors(behav))
 
 	req := mocks.NewMockRequest[string](t)
-	req.EXPECT().Handle(ctx).Return("test-123", nil)
+	req.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger")).Return("test-123", nil)
 
 	rounds := 5
 	for i := 0; i < rounds; i++ {

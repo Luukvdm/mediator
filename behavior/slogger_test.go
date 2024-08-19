@@ -32,7 +32,7 @@ func (n fakeRequest) Type() mediator.MessageType {
 	return mediator.TypeRequest
 }
 
-func (n fakeRequest) Handle(ctx context.Context, msg mediator.Message) (any, error) {
+func (n fakeRequest) Handle(ctx context.Context, _ *slog.Logger, msg mediator.Message) (any, error) {
 	if n.handleFunc == nil {
 		return nil, nil
 	}
@@ -49,7 +49,7 @@ func TestLogger_Handler_Successful(t *testing.T) {
 	handler := fakeRequest{}
 
 	behav := behavior.NewLogger(l)
-	_, err := behav.Handler(handler).Handle(ctx, handler)
+	_, err := behav.Handler(handler).Handle(ctx, l, handler)
 	require.NoError(t, err)
 
 	lines := bytes.Split(buf.Bytes(), []byte{'\n'})
@@ -80,7 +80,7 @@ func TestLogger_Handler_Error(t *testing.T) {
 	}}
 
 	behav := behavior.NewLogger(l)
-	_, err := behav.Handler(handler).Handle(ctx, handler)
+	_, err := behav.Handler(handler).Handle(ctx, l, handler)
 	require.Error(t, err)
 
 	lines := bytes.Split(buf.Bytes(), []byte{'\n'})

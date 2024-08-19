@@ -32,7 +32,7 @@ func TestSubscribe_Multiple(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		handler := mocks.NewMockNotificationHandler[string](t)
-		handler.EXPECT().Handle(ctx, mock.Anything).
+		handler.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger"), mock.Anything).
 			Once().
 			Return(nil)
 		err := mediator.Subscribe[string](p, handler)
@@ -51,7 +51,7 @@ func TestPublish(t *testing.T) {
 	myEvent := "test-123"
 
 	handler := mocks.NewMockNotificationHandler[string](t)
-	handler.EXPECT().Handle(ctx, mock.Anything).
+	handler.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger"), mock.Anything).
 		Once().
 		Return(nil)
 	err := mediator.Subscribe[string](p, handler)
@@ -70,7 +70,7 @@ func TestPublish_Errors(t *testing.T) {
 	myEvent := "test"
 	myErr := errors.New("fake error")
 	handler := mocks.NewMockNotificationHandler[string](t)
-	handler.EXPECT().Handle(ctx, mock.Anything).
+	handler.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger"), mock.Anything).
 		Twice().
 		Return(myErr)
 	err := mediator.Subscribe[string](p, handler)
@@ -93,7 +93,7 @@ func TestPublish_BehaviorPersistence(t *testing.T) {
 	myEvent := "test"
 
 	handler := mocks.NewMockNotificationHandler[string](t)
-	handler.EXPECT().Handle(ctx, mock.Anything).
+	handler.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger"), mock.Anything).
 		Return(nil)
 	err := mediator.Subscribe[string](m, handler)
 	require.NoError(t, err)
