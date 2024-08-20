@@ -25,7 +25,7 @@ type (
 	//
 	// The interface is implemented by [Mediator].
 	Publisher interface {
-		getPipeline() Pipeline
+		// getPipeline() Pipeline
 		getLogger() *slog.Logger
 		getAllNotifiers() map[any][]any
 		newNotifier(key any, notifier any)
@@ -78,11 +78,17 @@ func PublishWithLogger[T Notification[any]](ctx context.Context, l *slog.Logger,
 			// This shouldn't happen, but catching it just in case to prevent possible panics
 			errs = append(errs, errors.New("subscribers contain a broken handler that doesn't implement the NotificationHandler interface"))
 		}
-		handler := p.getPipeline().Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
-			return nil, h.Handle(ctx, l, notification)
-		})
+		/*
+			handler := p.getPipeline().Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
+				return nil, h.Handle(ctx, l, notification)
+			})
 
-		_, err := handler.Handle(ctx, l, NewNotificationMessage[T](notification))
+			_, err := handler.Handle(ctx, l, NewNotificationMessage[T](notification))
+			if err != nil {
+				errs = append(errs, err)
+			}
+		*/
+		err := h.Handle(ctx, l, notification)
 		if err != nil {
 			errs = append(errs, err)
 		}

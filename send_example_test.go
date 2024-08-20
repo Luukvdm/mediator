@@ -66,7 +66,7 @@ func ExampleSend() {
 	ctx := context.Background()
 
 	// create a new mediator with a behavior that logs the request
-	m := mediator.New(mediator.WithBehaviors(NewExampleLogger()))
+	m := mediator.New(mediator.WithRequestBehaviors(NewExampleLogger()))
 
 	// create a request and handle it through the mediator
 	req := NewSearchGopherQuery("Gus")
@@ -84,8 +84,8 @@ func ExampleSend() {
 func ExamplePublish() {
 	ctx := context.Background()
 
-	// create a new mediator with a behavior that logs the request
-	m := mediator.New(mediator.WithBehaviors(NewExampleLogger()))
+	// create a new mediator
+	m := mediator.New()
 
 	// create a new notification handler and subscribe it
 	myHandler := NewCreatedGophersCounter()
@@ -106,5 +106,4 @@ func ExamplePublish() {
 
 	// Output:
 	// counted gopher nr 1 named Gus
-	// Request: GopherCreatedEvent request={{Gus blue 100}}
 }

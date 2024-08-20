@@ -18,7 +18,7 @@ func TestSend(t *testing.T) {
 	ctx := context.Background()
 
 	behav := &testBehavior{}
-	m := mediator.New(mediator.WithBehaviors(behav))
+	m := mediator.New(mediator.WithRequestBehaviors(behav))
 
 	msg := "test123"
 	req := mocks.NewMockRequest[string](t)
@@ -37,7 +37,7 @@ func TestSend_BehaviorPersistence(t *testing.T) {
 	ctx := context.Background()
 
 	behav := &testBehavior{}
-	m := mediator.New(mediator.WithBehaviors(behav))
+	m := mediator.New(mediator.WithRequestBehaviors(behav))
 
 	req := mocks.NewMockRequest[string](t)
 	req.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger")).Return("test-123", nil)

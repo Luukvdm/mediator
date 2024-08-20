@@ -66,7 +66,7 @@ func TestChain_ResultPassesThroughBehavior(t *testing.T) {
 				return res, err
 			}))
 
-		m := mediator.New(mediator.WithBehaviors(b))
+		m := mediator.New(mediator.WithRequestBehaviors(b))
 
 		req := mocks.NewMockRequest[string](t)
 		req.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger")).Return(c.result, c.err)
@@ -98,7 +98,7 @@ func TestChain_BehaviorOrder(t *testing.T) {
 		},
 	}
 
-	m := mediator.New(mediator.WithBehaviors(b1, b2))
+	m := mediator.New(mediator.WithRequestBehaviors(b1, b2))
 
 	req := mocks.NewMockRequest[string](t)
 	req.EXPECT().Handle(ctx, mock.AnythingOfType("*slog.Logger")).Return("test-123", nil)
