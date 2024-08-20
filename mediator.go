@@ -31,9 +31,8 @@ type (
 	}
 )
 
-// WithBehaviors adds the given [Behavior] slice to the pipeline.
-// The behaviors are used for both [Request] and [Notification] messages.
-func WithBehaviors(behaviors ...Behavior) Option {
+// WithRequestBehaviors adds the given [Behavior] slice to the [Request] pipeline.
+func WithRequestBehaviors(behaviors ...Behavior) Option {
 	return func(o *options) {
 		o.behaviors = behaviors
 	}
