@@ -1,6 +1,9 @@
 inpackage: False
 with-expecter: True
 disable-version-string: True
+resolve-type-alias: False
+issue-845-fix: True
+log-level: "warn"
 packages:
   github.com/luukvdm/mediator:
     config:

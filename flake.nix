@@ -52,6 +52,7 @@
           packages = with pkgs; [
             go
             golangci-lint
+            gnumake
           ];
 
           devshell.startup = {
@@ -85,7 +86,7 @@
               name = "cover";
               category = "go";
               command = ''
-                ${pkgs.go}/bin/go test -coverprofile=coverate.out -covermode=atomic .
+                ${pkgs.go}/bin/go test -coverprofile=coverage.out -covermode=atomic .
                 ${pkgs.go}/bin/go tool cover -html=coverage.out -o coverage.html
               '';
             }
