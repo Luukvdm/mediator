@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
 )
 
 type (
@@ -25,10 +26,11 @@ type (
 	//
 	// The interface is implemented by [Mediator].
 	Publisher interface {
-		// getPipeline() Pipeline
+		getNotificationPipeline() Pipeline
 		getLogger() *slog.Logger
 		getAllNotifiers() map[any][]any
 		newNotifier(key any, notifier any)
+		getDefaultPublishOpts() *publishOptions
 	}
 
 	// Notification is an event that can be published through the [Publisher].
@@ -58,8 +60,8 @@ func Subscribe[T any](p Publisher, s NotificationHandler[T]) error {
 // Publish a [Notification] using [Publisher].
 //
 // The [Publisher] interface is implemented by [Mediator].
-func Publish[T Notification[any]](ctx context.Context, p Publisher, notification T) error {
-	return PublishWithLogger(ctx, p.getLogger(), p, notification)
+func Publish[T Notification[any]](ctx context.Context, p Publisher, notification T, options ...PublishOption) error {
+	return publish(ctx, p, notification, options...)
 }
 
 // PublishWithLogger publishes a [Notification] using [Publisher].
@@ -67,32 +69,85 @@ func Publish[T Notification[any]](ctx context.Context, p Publisher, notification
 // Passing a logger can be useful if you want to add attributes to the logger in the caller.
 //
 // The [Publisher] interface is implemented by [Mediator].
+//
+// Deprecated: Use [Publish] with the [WithPublishLogger] publish option instead.
 func PublishWithLogger[T Notification[any]](ctx context.Context, l *slog.Logger, p Publisher, notification T) error {
-	allHandlers := p.getAllNotifiers()
-	handlers := allHandlers[key[T]{}]
+	return publish(ctx, p, notification, WithPublishLogger(l))
+}
 
+func publish[T Notification[any]](ctx context.Context, p Publisher, notification T, options ...PublishOption) error {
+	opts := p.getDefaultPublishOpts()
+	// overwrite default options with given options
+	for _, o := range options {
+		o(opts)
+	}
+
+	var handlers []NotificationHandler[T]
+	for _, h := range p.getAllNotifiers()[key[T]{}] {
+		handlers = append(handlers, h.(NotificationHandler[T]))
+	}
+
+	if len(handlers) == 0 {
+		return nil
+	}
+
+	pl := p.getNotificationPipeline()
+
+	var err error
+	if opts.enableParallel {
+		err = runHandlersParallel(ctx, opts.l, pl, notification, handlers)
+	} else {
+		err = runHandlersSerial(ctx, opts.l, pl, notification, handlers)
+	}
+
+	return err
+}
+
+func runHandlersSerial[T Notification[any]](ctx context.Context, l *slog.Logger, pl Pipeline, notification T, handlers []NotificationHandler[T]) error {
 	var errs []error
-	for _, handler := range handlers {
-		h, ok := handler.(NotificationHandler[T])
-		if !ok {
-			// This shouldn't happen, but catching it just in case to prevent possible panics
-			errs = append(errs, errors.New("subscribers contain a broken handler that doesn't implement the NotificationHandler interface"))
-		}
-		/*
-			handler := p.getPipeline().Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
-				return nil, h.Handle(ctx, l, notification)
-			})
 
-			_, err := handler.Handle(ctx, l, NewNotificationMessage[T](notification))
-			if err != nil {
-				errs = append(errs, err)
-			}
-		*/
-		err := h.Handle(ctx, l, notification)
+	for _, h := range handlers {
+		handlerPl := pl.Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
+			return nil, h.Handle(ctx, l, notification)
+		})
+
+		_, err := handlerPl.Handle(ctx, l, NewNotificationMessage[T](notification))
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	return nil
+}
+
+func runHandlersParallel[T Notification[any]](ctx context.Context, l *slog.Logger, pl Pipeline, notification T, handlers []NotificationHandler[T]) error {
+	var wg sync.WaitGroup
+	wg.Add(len(handlers))
+
+	var errs []error
+	var errMu sync.Mutex
+
+	for _, h := range handlers {
+		// TODO: could add a goroutine pool option
+		go func() {
+			handlerPl := pl.Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
+				return nil, h.Handle(ctx, l, notification)
+			})
+
+			_, err := handlerPl.Handle(ctx, l, NewNotificationMessage[T](notification))
+			if err != nil {
+				errMu.Lock()
+				errs = append(errs, err)
+				errMu.Unlock()
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 
 	if len(errs) > 0 {
 		return errors.Join(errs...)

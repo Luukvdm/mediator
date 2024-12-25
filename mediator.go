@@ -15,36 +15,15 @@ type (
 		Sender
 	}
 	mediator struct {
-		l           *slog.Logger
-		pipeline    Pipeline
-		notifiers   map[any][]any
-		notifiersMu sync.RWMutex
+		l                    *slog.Logger
+		requestPipeline      Pipeline
+		notificationPipeline Pipeline
+		defaultPublishOpts   *publishOptions
+		notifiers            map[any][]any
+		notifiersMu          sync.RWMutex
 	}
 	key[T any] struct{}
-
-	// Option defines the method to customize [Mediator].
-	Option  func(*options)
-	options struct {
-		l         *slog.Logger
-		behaviors []Behavior
-		pipeline  Pipeline
-	}
 )
-
-// WithRequestBehaviors adds the given [Behavior] slice to the [Request] pipeline.
-func WithRequestBehaviors(behaviors ...Behavior) Option {
-	return func(o *options) {
-		o.behaviors = behaviors
-	}
-}
-
-// WithPipeline overwrites the default pipeline with the given implementation.
-// If this option is set, other pipeline options like [WithBehaviors] are ignored.
-func WithPipeline(pipeline Pipeline) Option {
-	return func(o *options) {
-		o.pipeline = pipeline
-	}
-}
 
 func (m *mediator) newNotifier(key any, notifier any) {
 	m.notifiersMu.Lock()
@@ -58,12 +37,21 @@ func (m *mediator) getAllNotifiers() map[any][]any {
 	return m.notifiers
 }
 
-func (m *mediator) getPipeline() Pipeline {
-	return m.pipeline
+func (m *mediator) getRequestPipeline() Pipeline {
+	return m.requestPipeline
+}
+
+func (m *mediator) getNotificationPipeline() Pipeline {
+	return m.notificationPipeline
 }
 
 func (m *mediator) getLogger() *slog.Logger {
 	return m.l
+}
+
+// getPublishOpts return the default publish options.
+func (m *mediator) getDefaultPublishOpts() *publishOptions {
+	return m.defaultPublishOpts
 }
 
 // New creates a new [Mediator].
@@ -71,19 +59,29 @@ func (m *mediator) getLogger() *slog.Logger {
 func New(opt ...Option) Mediator {
 	// default options
 	opts := &options{
-		behaviors: []Behavior{},
-		l:         slog.Default(),
+		requestBehaviors:      []Behavior{},
+		notificationBehaviors: []Behavior{},
+		l:                     slog.Default(),
+		parallelNotifications: false,
 	}
 	for _, o := range opt {
 		o(opts)
 	}
-	if opts.pipeline == nil {
-		opts.pipeline = newPipeline(opts.behaviors...)
+	if opts.requestPipeline == nil {
+		opts.requestPipeline = newPipeline(opts.requestBehaviors...)
+	}
+	if opts.notificationPipeline == nil {
+		opts.notificationPipeline = newPipeline(opts.notificationBehaviors...)
 	}
 
 	return &mediator{
-		l:         opts.l,
-		pipeline:  opts.pipeline,
-		notifiers: make(map[any][]any),
+		l:                    opts.l,
+		requestPipeline:      opts.requestPipeline,
+		notificationPipeline: opts.notificationPipeline,
+		notifiers:            make(map[any][]any),
+		defaultPublishOpts: &publishOptions{
+			l:              opts.l,
+			enableParallel: opts.parallelNotifications,
+		},
 	}
 }
