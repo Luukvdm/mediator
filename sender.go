@@ -11,7 +11,7 @@ type (
 	//
 	// The interface is implemented by [Mediator].
 	Sender interface {
-		getPipeline() Pipeline
+		getRequestPipeline() Pipeline
 		getLogger() *slog.Logger
 	}
 
@@ -42,7 +42,7 @@ func Send[T any](ctx context.Context, m Sender, req Request[T]) (T, error) {
 //
 // The [Sender] interface is implemented by [Mediator].
 func SendWithLogger[T any](ctx context.Context, l *slog.Logger, m Sender, req Request[T]) (T, error) {
-	handler := m.getPipeline().Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
+	handler := m.getRequestPipeline().Then(func(ctx context.Context, l *slog.Logger, _ Message) (any, error) {
 		return req.Handle(ctx, l)
 	})
 	resp, err := handler.Handle(ctx, l, NewRequestMessage(req))

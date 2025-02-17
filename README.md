@@ -2,6 +2,7 @@ Mediator
 =======
 
 [![GoDoc](https://godoc.org/github.com/luukvdm/mediator?status.svg)](https://pkg.go.dev/github.com/luukvdm/mediator)
+[![CI](https://github.com/Luukvdm/mediator/workflows/Tests/badge.svg)](https://github.com/Luukvdm/mediator/actions/workflows/ci.yaml)
 [![Coverage](https://img.shields.io/codecov/c/github/luukvdm/mediator)](https://codecov.io/gh/luukvdm/mediator)
 [![License](https://img.shields.io/github/license/luukvdm/mediator)](./LICENSE)
 
