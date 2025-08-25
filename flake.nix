@@ -100,7 +100,7 @@
               help = "Lint using golangci-lint";
               name = "lint";
               category = "go";
-              command = "${pkgs.golangci-lint}/bin/golangci-lint run -c .golangci.yml";
+              command = "${pkgs.golangci-lint}/bin/golangci-lint run --fix -c .golangci.yml";
             }
           ];
         };
